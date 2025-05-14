@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "MultiplayerTicTacToe", "MultiplayerTicTacToe\MultiplayerTicTacToe.njsproj", "{F230911C-388E-4262-85C7-B5D321F04D84}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F230911C-388E-4262-85C7-B5D321F04D84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F230911C-388E-4262-85C7-B5D321F04D84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F230911C-388E-4262-85C7-B5D321F04D84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F230911C-388E-4262-85C7-B5D321F04D84}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

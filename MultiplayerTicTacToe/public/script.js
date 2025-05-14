@@ -1,0 +1,108 @@
+const socket = io();
+let nickname = '';
+let room = null;
+let myTurn = false;
+let mySymbol = '';
+let board = Array(9).fill(null);
+
+const boardDiv = document.getElementById('board');
+const statusDiv = document.getElementById('status');
+
+function render() {
+    boardDiv.innerHTML = '';
+    board.forEach((cell, i) => {
+        const div = document.createElement('div');
+        div.textContent = cell || '';
+        div.className = 'cell';
+        div.onclick = () => {
+            if (!cell && myTurn && !checkWinner()) {
+                board[i] = mySymbol;
+                myTurn = false;
+                socket.emit('move', { room, board });
+                render();
+                checkGameStatus();
+            }
+        };
+        boardDiv.appendChild(div);
+    });
+    updateStatus();
+}
+function setNickname() {
+    nickname = document.getElementById('nicknameInput').value.trim();
+    if (nickname) {
+        socket.emit('set_nickname', { nickname });
+    }
+}
+
+
+function checkWinner() {
+    const lines = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+        [0, 4, 8], [2, 4, 6]             // diagonals
+    ];
+    for (let [a, b, c] of lines) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+        }
+    }
+    return null;
+}
+
+function checkGameStatus() {
+    const winner = checkWinner();
+    if (winner) {
+        statusDiv.textContent = `${winner} wins!`;
+        myTurn = false;
+    } else if (!board.includes(null)) {
+        statusDiv.textContent = `Draw!`;
+        myTurn = false;
+    }
+}
+
+function updateStatus() {
+    if (checkWinner()) return;
+    if (!board.includes(null)) return;
+    statusDiv.textContent = myTurn ? `Your turn (${mySymbol})` : `Opponent's turn`;
+}
+
+// ?? Restart logic
+function restartGame() {
+    if (!room) return;
+
+    const confirmed = confirm("Restart the game?");
+    if (!confirmed) return;
+
+    board = Array(9).fill(null);
+    if (mySymbol === 'X') myTurn = true;
+    else myTurn = false;
+
+    socket.emit('restart', { room });
+    render();
+}
+
+socket.on('start', ({ room: r, players }) => {
+    room = r;
+    mySymbol = players[0].id === socket.id ? 'X' : 'O';
+    myTurn = mySymbol === 'X';
+    board = Array(9).fill(null);
+    render();
+
+    const playerNames = `${players[0].name} (X) vs ${players[1].name} (O)`;
+    document.getElementById('players').textContent = playerNames;
+    alert(`Game started! You are ${mySymbol}`);
+});
+
+socket.on('update', (updatedBoard) => {
+    board = updatedBoard;
+    myTurn = true;
+    render();
+    checkGameStatus();
+});
+
+// ?? Receive restart event from opponent
+socket.on('restart', () => {
+    board = Array(9).fill(null);
+    myTurn = mySymbol === 'X'; // X always starts
+    render();
+});
