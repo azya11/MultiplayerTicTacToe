@@ -11,6 +11,22 @@ function createRoom() {
     socket.emit('create_room');
 }
 
+function sendChat() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (message && nickname) {
+        socket.emit('chat', { sender: nickname, message });
+        input.value = '';
+    }
+}
+
+document.getElementById('chatInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        sendChat();
+    }
+});
+
+
 function joinRoom() {
     const roomCode = document.getElementById('roomCodeInput').value.trim();
     if (roomCode) {
@@ -41,6 +57,8 @@ function setNickname() {
     nickname = document.getElementById('nicknameInput').value.trim();
     if (nickname) {
         socket.emit('set_nickname', { nickname });
+        document.getElementById('chatInput').disabled = false;
+        document.getElementById('chatButton').disabled = false;
     }
 }
 
@@ -123,4 +141,11 @@ socket.on('room_created', ({ roomCode }) => {
 
 socket.on('join_error', ({ message }) => {
     alert('Join failed: ' + message);
+});
+
+socket.on('chat', ({ sender, message }) => {
+    const list = document.getElementById('chatMessages');
+    const item = document.createElement('li');
+    item.textContent = `${sender}: ${message}`;
+    list.appendChild(item);
 });

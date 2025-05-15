@@ -46,3 +46,19 @@ button {
     font-weight: bold;
     margin: 10px 0;
 }
+
+#chatMessages {
+    max-height: 200px;
+    overflow-y: auto;
+    width: 300px;
+    margin: 0 auto;
+    text-align: left;
+    padding-left: 10px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+}
+
+#chatInput {
+    width: 200px;
+    padding: 5px;
+}

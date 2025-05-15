@@ -67,8 +67,10 @@ io.on('connection', (socket) => {
 
     // Set nickname
     socket.on('set_nickname', ({ nickname }) => {
-        nicknames[socket.id] = nickname;
-        socket.emit('nickname_ack', { success: true });
+        if (nickname && typeof nickname === 'string') {
+            nicknames[socket.id] = nickname;
+            socket.emit('nickname_ack', { success: true });
+        }
     });
 
     // Create a room
@@ -110,6 +112,13 @@ io.on('connection', (socket) => {
         io.to(room).emit('restart');
     });
 
+    // Global Chat
+    socket.on('chat', ({ sender, message }) => {
+        if (nicknames[socket.id] && typeof message === 'string' && message.trim() !== '') {
+            io.emit('chat', { sender, message: message.trim() });
+        }
+    });
+
     // Cleanup on disconnect
     socket.on('disconnect', () => {
         console.log(`Disconnected: ${socket.id}`);
@@ -117,7 +126,9 @@ io.on('connection', (socket) => {
 
         for (const [roomCode, players] of Object.entries(rooms)) {
             rooms[roomCode] = players.filter(p => p.id !== socket.id);
-            if (rooms[roomCode].length === 0) delete rooms[roomCode];
+            if (rooms[roomCode].length === 0) {
+                delete rooms[roomCode];
+            }
         }
     });
 });

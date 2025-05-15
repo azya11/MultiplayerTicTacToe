@@ -24,6 +24,12 @@
 
     <button onclick="restartGame()">Restart</button>
 
+    
+    <h2>Global Chat</h2>
+    <ul id="chatMessages" style="list-style: none; padding: 0;"></ul>
+    <input type="text" id="chatInput" placeholder="Type a message" disabled>
+    <button onclick="sendChat()" id="chatButton" disabled>Send</button>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
