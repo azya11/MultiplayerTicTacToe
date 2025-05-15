@@ -7,6 +7,16 @@ let board = Array(9).fill(null);
 
 const boardDiv = document.getElementById('board');
 const statusDiv = document.getElementById('status');
+function createRoom() {
+    socket.emit('create_room');
+}
+
+function joinRoom() {
+    const roomCode = document.getElementById('roomCodeInput').value.trim();
+    if (roomCode) {
+        socket.emit('join_room', { roomCode });
+    }
+}
 
 function render() {
     boardDiv.innerHTML = '';
@@ -105,4 +115,12 @@ socket.on('restart', () => {
     board = Array(9).fill(null);
     myTurn = mySymbol === 'X'; // X always starts
     render();
+});
+
+socket.on('room_created', ({ roomCode }) => {
+    alert('Room created! Share this code: ' + roomCode);
+});
+
+socket.on('join_error', ({ message }) => {
+    alert('Join failed: ' + message);
 });

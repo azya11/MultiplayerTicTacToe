@@ -35,12 +35,18 @@ app.use((req, res, next) => {
 if (app.get('env') === 'development') {
     app.use((err, req, res, next) => {
         res.status(err.status || 500);
-        res.render('error', { message: err.message, error: err });
+        res.render('error', {
+            message: err.message,
+            error: err,
+        });
     });
 } else {
     app.use((err, req, res, next) => {
         res.status(err.status || 500);
-        res.render('error', { message: err.message, error: {} });
+        res.render('error', {
+            message: err.message,
+            error: {},
+        });
     });
 }
 
@@ -52,53 +58,66 @@ app.set('port', process.env.PORT || 3000);
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Game logic
-let waitingPlayer = null;
-let nicknames = {};
+// === Game State ===
+let nicknames = {};         // socket.id -> nickname
+let rooms = {};             // roomCode -> [player1, player2]
 
 io.on('connection', (socket) => {
-    console.log(`New client connected: ${socket.id}`);
+    console.log(`Client connected: ${socket.id}`);
 
-    // Accept nickname anytime after connect
+    // Set nickname
     socket.on('set_nickname', ({ nickname }) => {
         nicknames[socket.id] = nickname;
         socket.emit('nickname_ack', { success: true });
     });
 
-    if (waitingPlayer) {
-        const room = `${waitingPlayer.id}#${socket.id}`;
-        socket.join(room);
-        waitingPlayer.join(room);
+    // Create a room
+    socket.on('create_room', () => {
+        const roomCode = Math.random().toString(36).substring(2, 8);
+        rooms[roomCode] = [socket];
+        socket.join(roomCode);
+        socket.emit('room_created', { roomCode });
+    });
 
-        const player1 = waitingPlayer;
-        const player2 = socket;
+    // Join an existing room
+    socket.on('join_room', ({ roomCode }) => {
+        if (rooms[roomCode] && rooms[roomCode].length === 1) {
+            const player1 = rooms[roomCode][0];
+            const player2 = socket;
 
-        io.to(room).emit('start', {
-            room,
-            players: [
-                { id: player1.id, name: nicknames[player1.id] || "Player 1" },
-                { id: player2.id, name: nicknames[player2.id] || "Player 2" }
-            ]
-        });
+            rooms[roomCode].push(player2);
+            socket.join(roomCode);
 
-        waitingPlayer = null;
-    } else {
-        waitingPlayer = socket;
-    }
+            io.to(roomCode).emit('start', {
+                room: roomCode,
+                players: [
+                    { id: player1.id, name: nicknames[player1.id] || "Player 1" },
+                    { id: player2.id, name: nicknames[player2.id] || "Player 2" }
+                ]
+            });
+        } else {
+            socket.emit('join_error', { message: 'Room not found or already full.' });
+        }
+    });
 
+    // Game move
     socket.on('move', ({ room, board }) => {
         socket.to(room).emit('update', board);
     });
 
+    // Restart game
     socket.on('restart', ({ room }) => {
         io.to(room).emit('restart');
     });
 
+    // Cleanup on disconnect
     socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id}`);
+        console.log(`Disconnected: ${socket.id}`);
         delete nicknames[socket.id];
-        if (waitingPlayer?.id === socket.id) {
-            waitingPlayer = null;
+
+        for (const [roomCode, players] of Object.entries(rooms)) {
+            rooms[roomCode] = players.filter(p => p.id !== socket.id);
+            if (rooms[roomCode].length === 0) delete rooms[roomCode];
         }
     });
 });
