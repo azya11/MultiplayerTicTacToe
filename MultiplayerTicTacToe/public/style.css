@@ -1,4 +1,8 @@
 body {
+    background-image: url('https://static.vecteezy.com/system/resources/previews/004/532/221/non_2x/tic-tac-toe-seamless-background-on-dark-blue-illustration-vector.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
