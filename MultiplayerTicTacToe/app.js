@@ -1,5 +1,6 @@
 'use strict';
-
+let friends = {};   // username -> [friend1, friend2, ...]
+let friendRequests = {}; // username -> [pending requests]
 let userDB = {};  // username -> password
 
 
@@ -66,6 +67,54 @@ let nicknames = {};         // socket.id -> nickname
 let rooms = {};             // roomCode -> [player1, player2]
 
 io.on('connection', (socket) => {
+    function findSocketByUsername(username) {
+        const id = Object.keys(nicknames).find(key => nicknames[key] === username);
+        return id ? io.sockets.sockets.get(id) : null;
+    }
+
+    socket.on('remove_friend', ({ username, target }) => {
+        friends[username] = (friends[username] || []).filter(f => f !== target);
+        friends[target] = (friends[target] || []).filter(f => f !== username);
+        const userSocket = findSocketByUsername(username);
+        const targetSocket = findSocketByUsername(target);
+        if (userSocket) {
+            userSocket.emit('friend_list_update', { friends: friends[username] });
+        }
+        if (targetSocket) {
+            targetSocket.emit('friend_list_update', { friends: friends[target] });
+        }
+    });
+
+    socket.on('friend_response', ({ from, to, accept }) => {
+        friendRequests[to] = (friendRequests[to] || []).filter(r => r !== from);
+        if (accept) {
+            friends[from] = friends[from] || [];
+            friends[to] = friends[to] || [];
+            if (!friends[from].includes(to)) friends[from].push(to);
+            if (!friends[to].includes(from)) friends[to].push(from);
+        }
+        const userSocket = findSocketByUsername(to);
+        const friendSocket = findSocketByUsername(from);
+        if (userSocket) {
+            userSocket.emit('friend_list_update', { friends: friends[to] });
+        }
+        if (friendSocket) {
+            friendSocket.emit('friend_list_update', { friends: friends[from] });
+        }
+    });
+
+    socket.on('friend_request', ({ from, to }) => {
+        if (!userDB[to]) return;
+        friendRequests[to] = friendRequests[to] || [];
+        if (!friendRequests[to].includes(from)) {
+            friendRequests[to].push(from);
+            const targetSocket = findSocketByUsername(to);
+            if (targetSocket) {
+                targetSocket.emit('friend_request_received', { from });
+            }
+        }
+    });
+
     console.log(`Client connected: ${socket.id}`);
 
     socket.on('signup', ({ username, password }) => {

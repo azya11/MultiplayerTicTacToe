@@ -26,6 +26,15 @@
     <div id="status">Waiting for opponent...</div>
     <div id="board" class="grid"></div>
     <button onclick="logout()" id="logoutButton" style="display: none;">Logout</button>
+    <h3>Friends</h3>
+    <div>
+        <input type="text" id="friendInput" placeholder="Friend username">
+        <button onclick="sendFriendRequest()">Add Friend</button>
+    </div>
+
+    <ul id="friendList"></ul>
+    <ul id="requestList"></ul>
+
     <button onclick="restartGame()">Restart</button>
 
 

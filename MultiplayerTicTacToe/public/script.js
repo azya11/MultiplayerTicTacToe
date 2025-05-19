@@ -200,3 +200,34 @@ socket.on('auth_success', ({ username }) => {
 socket.on('auth_error', ({ message }) => {
     alert('Auth error: ' + message);
 });
+
+function sendFriendRequest() {
+    const target = document.getElementById('friendInput').value.trim();
+    if (!target || !nickname || !isLoggedIn) return;
+    socket.emit('friend_request', { from: nickname, to: target });
+}
+
+socket.on('friend_request_received', ({ from }) => {
+    const requestList = document.getElementById('requestList');
+    const li = document.createElement('li');
+    li.innerHTML = `${from} <button onclick="respondFriend('${from}', true)">Accept</button> <button onclick="respondFriend('${from}', false)">Reject</button>`;
+    requestList.appendChild(li);
+});
+
+function respondFriend(from, accept) {
+    socket.emit('friend_response', { from, to: nickname, accept });
+}
+
+socket.on('friend_list_update', ({ friends }) => {
+    const list = document.getElementById('friendList');
+    list.innerHTML = '';
+    friends.forEach(f => {
+        const li = document.createElement('li');
+        li.innerHTML = `${f} <button onclick="removeFriend('${f}')">Remove</button>`;
+        list.appendChild(li);
+    });
+});
+
+function removeFriend(friend) {
+    socket.emit('remove_friend', { username: nickname, target: friend });
+}
