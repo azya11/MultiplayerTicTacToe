@@ -148,12 +148,13 @@ io.on('connection', (socket) => {
             socket.emit('auth_error', { message: 'Wrong password' });
         } else {
             nicknames[socket.id] = username;
-            socket.emit('auth_success', { username });
             onlineUsers.add(username);
+            socket.emit('auth_success', { username });
             updateFriendStatuses(username);
-
         }
     });
+
+
 
     // Set nickname
     socket.on('set_nickname', ({ nickname }) => {
