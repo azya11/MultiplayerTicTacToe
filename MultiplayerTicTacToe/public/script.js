@@ -217,13 +217,28 @@ socket.on('friend_request_received', ({ from }) => {
 function respondFriend(from, accept) {
     socket.emit('friend_response', { from, to: nickname, accept });
 }
+socket.on('friend_status_update', ({ friend, isOnline }) => {
+    const statusSpan = document.getElementById(`status-${friend}`);
+    if (statusSpan) {
+        statusSpan.textContent = isOnline ? "(online)" : "(offline)";
+        statusSpan.style.color = isOnline ? "limegreen" : "red";
+    }
+});
+
+
 
 socket.on('friend_list_update', ({ friends }) => {
     const list = document.getElementById('friendList');
     list.innerHTML = '';
     friends.forEach(f => {
         const li = document.createElement('li');
-        li.innerHTML = `${f} <button onclick="removeFriend('${f}')">Remove</button>`;
+        li.id = `friend-${f}`;
+        li.innerHTML = `
+  ${f} 
+  <span class="friend-status" id="status-${f}" style="color: gray;">(unknown)</span>
+  <button onclick="removeFriend('${f}')">Remove</button>
+`;
+
         list.appendChild(li);
     });
 });

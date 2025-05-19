@@ -2,6 +2,7 @@
 let friends = {};   // username -> [friend1, friend2, ...]
 let friendRequests = {}; // username -> [pending requests]
 let userDB = {};  // username -> password
+let onlineUsers = new Set(); // username strings
 
 
 const debug = require('debug')('my express app');
@@ -85,6 +86,20 @@ io.on('connection', (socket) => {
         }
     });
 
+    function updateFriendStatuses(user) {
+        const userFriends = friends[user] || [];
+        userFriends.forEach(friend => {
+            const socket = findSocketByUsername(friend);
+            if (socket) {
+                socket.emit('friend_status_update', {
+                    friend: user,
+                    isOnline: onlineUsers.has(user)
+                });
+            }
+        });
+    }
+
+
     socket.on('friend_response', ({ from, to, accept }) => {
         friendRequests[to] = (friendRequests[to] || []).filter(r => r !== from);
         if (accept) {
@@ -134,6 +149,9 @@ io.on('connection', (socket) => {
         } else {
             nicknames[socket.id] = username;
             socket.emit('auth_success', { username });
+            onlineUsers.add(username);
+            updateFriendStatuses(username);
+
         }
     });
 
@@ -194,6 +212,11 @@ io.on('connection', (socket) => {
     // Cleanup on disconnect
     socket.on('disconnect', () => {
         console.log(`Disconnected: ${socket.id}`);
+        const username = nicknames[socket.id];
+        if (username) {
+            onlineUsers.delete(username);
+            updateFriendStatuses(username);
+        }
         delete nicknames[socket.id];
 
         for (const [roomCode, players] of Object.entries(rooms)) {
