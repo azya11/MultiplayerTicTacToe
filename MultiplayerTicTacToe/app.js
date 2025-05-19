@@ -1,5 +1,8 @@
 'use strict';
 
+let userDB = {};  // username -> password
+
+
 const debug = require('debug')('my express app');
 const express = require('express');
 const path = require('path');
@@ -65,6 +68,26 @@ let rooms = {};             // roomCode -> [player1, player2]
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
+    socket.on('signup', ({ username, password }) => {
+        if (userDB[username]) {
+            socket.emit('auth_error', { message: 'Username already exists' });
+        } else {
+            userDB[username] = password;
+            nicknames[socket.id] = username;
+            socket.emit('auth_success', { username });
+        }
+    });
+    socket.on('login', ({ username, password }) => {
+        if (!userDB[username]) {
+            socket.emit('auth_error', { message: 'User not found' });
+        } else if (userDB[username] !== password) {
+            socket.emit('auth_error', { message: 'Wrong password' });
+        } else {
+            nicknames[socket.id] = username;
+            socket.emit('auth_success', { username });
+        }
+    });
+
     // Set nickname
     socket.on('set_nickname', ({ nickname }) => {
         if (nickname && typeof nickname === 'string') {
@@ -126,7 +149,7 @@ io.on('connection', (socket) => {
 
         for (const [roomCode, players] of Object.entries(rooms)) {
             rooms[roomCode] = players.filter(p => p.id !== socket.id);
-            if (rooms[roomCode].length === 0) {
+            if (rooms[roomCode].length === 0) { 
                 delete rooms[roomCode];
             }
         }

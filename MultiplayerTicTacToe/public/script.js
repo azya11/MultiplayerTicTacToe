@@ -4,6 +4,8 @@ let room = null;
 let myTurn = false;
 let mySymbol = '';
 let board = Array(9).fill(null);
+let isLoggedIn = false;
+
 
 const boardDiv = document.getElementById('board');
 const statusDiv = document.getElementById('status');
@@ -148,4 +150,53 @@ socket.on('chat', ({ sender, message }) => {
     const item = document.createElement('li');
     item.textContent = `${sender}: ${message}`;
     list.appendChild(item);
+});
+
+function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    if (!username || !password) return alert("Fill all fields");
+
+    socket.emit('login', { username, password });
+}
+function logout() {
+    nickname = '';
+    isLoggedIn = false;
+
+    document.getElementById('auth').style.display = 'block';
+    document.getElementById('players').style.display = 'none';
+    document.getElementById('logoutButton').style.display = 'none';
+
+    document.getElementById('chatInput').disabled = true;
+    document.getElementById('chatButton').disabled = true;
+
+    alert("You have been logged out.");
+}
+
+function signup() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    if (!username || !password) return alert("Fill all fields");
+
+    socket.emit('signup', { username, password });
+}
+
+// Handle login/signup response
+socket.on('auth_success', ({ username }) => {
+    nickname = username;
+    isLoggedIn = true;
+
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('players').style.display = 'block';
+    document.getElementById('logoutButton').style.display = 'block';
+
+    document.getElementById('chatInput').disabled = false;
+    document.getElementById('chatButton').disabled = false;
+
+    alert(`Logged in as ${username}`);
+});
+
+
+socket.on('auth_error', ({ message }) => {
+    alert('Auth error: ' + message);
 });
